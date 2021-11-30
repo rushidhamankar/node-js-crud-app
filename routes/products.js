@@ -2,10 +2,29 @@ var express = require("express");
 var router = express.Router();
 var dbConn = require("../lib/db");
 
-// display books page
 router.get("/", function (req, res, next) {
+  let limit;
+  let page;
+
+  if (req.query.page === undefined && req.query.limit === undefined) {
+    page = 0;
+    limit = 1000;
+  } else if (req.query.page === undefined && req.query.limit !== undefined) {
+    page = 0;
+    limit = req.query.limit;
+  } else if (req.query.page !== undefined && req.query.limit === undefined) {
+    page = 0;
+    limit = 1000;
+  } else if (req.query.page == 1) {
+    limit = req.query.limit;
+    page = 0;
+  } else {
+    limit = req.query.limit;
+    page = (req.query.page - 1) * limit;
+  }
+
   dbConn.query(
-    "SELECT product.id, product.product_id, product.product_name, category.category_id, category.category_name FROM product INNER JOIN category ON product.category_id = category.category_id",
+    `SELECT product.id, product.product_id, product.product_name, category.category_id, category.category_name FROM product INNER JOIN category ON product.category_id = category.category_id limit ${limit} offset ${page} `,
     function (err, rows) {
       if (err) {
         req.flash("error", err);
